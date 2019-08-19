@@ -3,10 +3,8 @@ import os
 
 import cv2
 
-from algorithms.common.model_util import load_trained_model
-
 DETECT_ALGORITHM = "tf_ssd"
-CLASSIFY_ALGORITHM = "vgg16"
+CLASSIFY_ALGORITHM = "resnet"
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -34,12 +32,6 @@ def get_detect_function():
 def object_classification():
     """ Demonstrate object classification algorithms using the webcam """
     classify = get_classify_function()
-
-    # TODO: better way to handle loading models
-    model = load_trained_model(f"{dir_path}/algorithms/resources/{CLASSIFY_ALGORITHM}/models/fruits_360.h5")
-    if model is None:
-        raise Exception("failed to load model")
-
     video_capture = cv2.VideoCapture(0)
 
     while True:
@@ -49,7 +41,7 @@ def object_classification():
         # Press "space" to classify the object in the webcam
         if cv2.waitKey(1) & 0xFF == ord(" "):
             X = cv2.resize(frame, (100, 100))
-            label = classify(X, model)
+            label = classify(X)
             print(label)
 
         # Press "q" to quit

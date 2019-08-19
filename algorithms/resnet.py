@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 from glob import glob
 
@@ -14,22 +15,22 @@ from keras.preprocessing.image import ImageDataGenerator
 from .common.model_evaluation import get_confusion_matrix
 from .common.model_util import load_trained_model
 
-
+DATA_SET = "fruits_360"
 dir_path = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.abspath(os.path.join(dir_path, os.pardir))
-model_path = f"{root_path}/algorithms/resources/resnet/models/fruits_360.h5"
+model_path = f"{root_path}/algorithms/resources/resnet/models/{DATA_SET}.h5"
+model = None
 
-# TODO: create a full label map for all the fruit
-LABEL_MAP = {
-    0: "Apple Golden 1",
-    1: "Avocado",
-    2: "Banana",
-    3: "Kiwi",
-    4: "Lemon",
-    5: "Mango",
-    6: "Raspberry",
-    7: "Strawberry",
-}
+with open(f"{root_path}/algorithms/resources/resnet/models/{DATA_SET}_label_map.json") as f:
+    label_map = json.load(f)
+
+
+def load_model():
+    global model
+    model = load_trained_model(model_path)
+    if model is None:
+        raise Exception("failed to load model")
+    return model
 
 
 def train(debug: bool, epochs: int, model: Model = None):
@@ -169,19 +170,21 @@ def train(debug: bool, epochs: int, model: Model = None):
     model.save(model_path)
 
 
-def classify(X, model: Model = None) -> str:
+def classify(X) -> str:
     """
     Classify an image
     :param X: 3-D array of size: W x L x C
-    :param model: the trained model
     :return: a label
     """
+    if model is None:
+        load_model()
+
     # model takes in a 4-D array where the first dimension is the number of images
     prediction = model.predict(X.reshape(1, 100, 100, 3))
 
-    label = np.argmax(prediction, axis=1)[0]
+    label = str(np.argmax(prediction, axis=1)[0])
 
-    return LABEL_MAP[label]
+    return label_map[label]
 
 
 def main():
@@ -193,7 +196,7 @@ def main():
     args = vars(parser.parse_args())
 
     if args["load"]:
-        model = load_trained_model(model_path)
+        model = load_model()
     else:
         model = None
 
